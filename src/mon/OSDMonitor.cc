@@ -4358,7 +4358,6 @@ int OSDMonitor::prepare_new_pool(string& name, uint64_t auid,
 
 bool OSDMonitor::prepare_set_flag(MonOpRequestRef op, int flag)
 {
-  MMonCommand *m = static_cast<MMonCommand*>(op->get_req());
   ostringstream ss;
   if (pending_inc.new_flags < 0)
     pending_inc.new_flags = osdmap.get_flags();
@@ -4371,7 +4370,6 @@ bool OSDMonitor::prepare_set_flag(MonOpRequestRef op, int flag)
 
 bool OSDMonitor::prepare_unset_flag(MonOpRequestRef op, int flag)
 {
-  MMonCommand *m = static_cast<MMonCommand*>(op->get_req());
   ostringstream ss;
   if (pending_inc.new_flags < 0)
     pending_inc.new_flags = osdmap.get_flags();
@@ -7200,7 +7198,6 @@ bool OSDMonitor::prepare_pool_op(MonOpRequestRef op)
 
 bool OSDMonitor::prepare_pool_op_create(MonOpRequestRef op)
 {
-  MPoolOp *m = static_cast<MPoolOp*>(op->get_req());
   int err = prepare_new_pool(op);
   wait_for_finished_proposal(new OSDMonitor::C_PoolOp(this, op, err, pending_inc.epoch));
   return true;
