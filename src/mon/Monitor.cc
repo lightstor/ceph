@@ -2539,20 +2539,20 @@ void Monitor::handle_command(MonOpRequestRef op)
   MMonCommand *m = static_cast<MMonCommand*>(op->get_req());
   if (m->fsid != monmap->fsid) {
     dout(0) << "handle_command on fsid " << m->fsid << " != " << monmap->fsid << dendl;
-    reply_command(m, -EPERM, "wrong fsid", 0);
+    reply_command(op, -EPERM, "wrong fsid", 0);
     return;
   }
 
   MonSession *session = m->get_session();
   if (!session) {
     string rs = "Access denied";
-    reply_command(m, -EACCES, rs, 0);
+    reply_command(op, -EACCES, rs, 0);
     return;
   }
 
   if (m->cmd.empty()) {
     string rs = "No command supplied";
-    reply_command(m, -EINVAL, rs, 0);
+    reply_command(op, -EINVAL, rs, 0);
     return;
   }
 
@@ -2570,7 +2570,7 @@ void Monitor::handle_command(MonOpRequestRef op)
     r = -EINVAL;
     rs = ss.str();
     if (!m->get_source().is_mon())  // don't reply to mon->mon commands
-      reply_command(m, r, rs, 0);
+      reply_command(op, r, rs, 0);
     return;
   }
 
@@ -2581,7 +2581,7 @@ void Monitor::handle_command(MonOpRequestRef op)
     format_command_descriptions(leader_supported_mon_commands,
 				leader_supported_mon_commands_size, f, &rdata);
     delete f;
-    reply_command(m, 0, "", rdata, 0);
+    reply_command(op, 0, "", rdata, 0);
     return;
   }
 
@@ -2605,7 +2605,7 @@ void Monitor::handle_command(MonOpRequestRef op)
                                const_cast<MonCommand*>(leader_supported_mon_commands),
                                leader_supported_mon_commands_size);
   if (!leader_cmd) {
-    reply_command(m, -EINVAL, "command not known", 0);
+    reply_command(op, -EINVAL, "command not known", 0);
     return;
   }
   // validate command is in our map & matches, or forward if it is allowed
@@ -2614,7 +2614,7 @@ void Monitor::handle_command(MonOpRequestRef op)
   if (!is_leader()) {
     if (!mon_cmd) {
       if (leader_cmd->has_flag(MonCommand::FLAG_NOFORWARD)) {
-	reply_command(m, -EINVAL,
+	reply_command(op, -EINVAL,
 		      "command not locally supported and not allowed to forward",
 		      0);
 	return;
@@ -2625,7 +2625,7 @@ void Monitor::handle_command(MonOpRequestRef op)
       return;
     } else if (!mon_cmd->is_compat(leader_cmd)) {
       if (mon_cmd->has_flag(MonCommand::FLAG_NOFORWARD)) {
-	reply_command(m, -EINVAL,
+	reply_command(op, -EINVAL,
 		      "command not compatible with leader and not allowed to forward",
 		      0);
 	return;
@@ -2639,7 +2639,7 @@ void Monitor::handle_command(MonOpRequestRef op)
 
   if (session->proxy_con && mon_cmd->has_flag(MonCommand::FLAG_NOFORWARD)) {
     dout(10) << "Got forward for noforward command " << m << dendl;
-    reply_command(m, -EINVAL, "forward for noforward command", rdata, 0);
+    reply_command(op, -EINVAL, "forward for noforward command", rdata, 0);
     return;
   }
 
@@ -2663,7 +2663,7 @@ void Monitor::handle_command(MonOpRequestRef op)
       << "from='" << session->inst << "' "
       << "entity='" << session->entity_name << "' "
       << "cmd=" << m->cmd << ":  access denied";
-    reply_command(m, -EACCES, "access denied", 0);
+    reply_command(op, -EACCES, "access denied", 0);
     return;
   }
 
@@ -2713,7 +2713,7 @@ void Monitor::handle_command(MonOpRequestRef op)
       ds << monmap->fsid;
       rdata.append(ds);
     }
-    reply_command(m, 0, "", rdata, 0);
+    reply_command(op, 0, "", rdata, 0);
     return;
   }
 
@@ -2721,11 +2721,11 @@ void Monitor::handle_command(MonOpRequestRef op)
     wait_for_paxos_write();
     if (is_leader()) {
       int r = scrub();
-      reply_command(m, r, "", rdata, 0);
+      reply_command(op, r, "", rdata, 0);
     } else if (is_peon()) {
       forward_request_leader(m);
     } else {
-      reply_command(m, -EAGAIN, "no quorum", rdata, 0);
+      reply_command(op, -EAGAIN, "no quorum", rdata, 0);
     }
     return;
   }
@@ -2969,7 +2969,7 @@ void Monitor::handle_command(MonOpRequestRef op)
 
  out:
   if (!m->get_source().is_mon())  // don't reply to mon->mon commands
-    reply_command(m, r, rs, rdata, 0);
+    reply_command(op, r, rs, rdata, 0);
 }
 
 void Monitor::reply_command(MMonCommand *m, int rc, const string &rs, version_t version)
