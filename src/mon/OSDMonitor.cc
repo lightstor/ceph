@@ -1348,7 +1348,7 @@ bool OSDMonitor::preprocess_get_osdmap(MonOpRequestRef op)
   }
   reply->oldest_map = get_first_committed();
   reply->newest_map = osdmap.get_epoch();
-  mon->send_reply(m, reply);
+  mon->send_reply(op, reply);
   return true;
 }
 
@@ -1447,7 +1447,7 @@ public:
   void _finish(int) {
     MOSDMarkMeDown *m = static_cast<MOSDMarkMeDown*>(op->get_req());
     osdmon->mon->send_reply(
-      m,
+      op,
       new MOSDMarkMeDown(
 	m->fsid,
 	m->get_target(),
@@ -7400,5 +7400,5 @@ void OSDMonitor::_pool_op_reply(MonOpRequestRef op,
   dout(20) << "_pool_op_reply " << ret << dendl;
   MPoolOpReply *reply = new MPoolOpReply(m->fsid, m->get_tid(),
 					 ret, epoch, get_last_committed(), blp);
-  mon->send_reply(m, reply);
+  mon->send_reply(op, reply);
 }
